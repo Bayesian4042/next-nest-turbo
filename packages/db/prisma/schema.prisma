@@ -25,3 +25,45 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Apl {
+  id        String     @id @default(uuid())
+  aplCode   String     @unique
+  aplName   String
+  category  String
+  status    String     @default("Processing")
+  images    AplImage[]
+  result    AplResult?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model AplImage {
+  id           String   @id @default(uuid())
+  aplId        String
+  apl          Apl      @relation(fields: [aplId], references: [id], onDelete: Cascade)
+  filename     String
+  originalName String
+  mimeType     String
+  createdAt    DateTime @default(now())
+}
+
+model AplResult {
+  id                String   @id @default(uuid())
+  aplId             String   @unique
+  apl               Apl      @relation(fields: [aplId], references: [id], onDelete: Cascade)
+  productName       String?
+  brand             String?
+  ingredients       String?
+  allergens         String?
+  probableAllergens String?
+  nutritionValues   String?
+  enrichedData      String?
+  confidenceScore   Float?
+  confidenceDetails String?
+  reasoning         String?
+  sources           String?
+  status            String   @default("Processing")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
