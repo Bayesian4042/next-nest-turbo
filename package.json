@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "next-nest-casl-monorepo",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -14,9 +14,9 @@
     "turbo": "^2.9.6",
     "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=18",
+    "pnpm": ">=9.0.0"
   },
   "dependencies": {
     "zod": "^4.3.6"
