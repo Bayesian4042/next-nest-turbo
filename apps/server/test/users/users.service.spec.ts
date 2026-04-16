@@ -2,6 +2,8 @@ import { UsersService } from '@/users/users.service';
 import { UsersRepository } from '@/users/repository/users.repository';
 import { CreateUserDto } from '@/users/dto/create-user.dto';
 import { UpdateUserDto } from '@/users/dto/update-user.dto';
+import { UserCreatedEvent } from '@/users/events/user-created.event';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 const mockUser = {
   id: 'user-1',
@@ -19,12 +21,16 @@ const mockRepository: jest.Mocked<UsersRepository> = {
   update: jest.fn(),
 } as unknown as jest.Mocked<UsersRepository>;
 
+const mockEventEmitter = {
+  emit: jest.fn(),
+} as unknown as jest.Mocked<EventEmitter2>;
+
 describe('UsersService', () => {
   let service: UsersService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new UsersService(mockRepository);
+    service = new UsersService(mockRepository, mockEventEmitter);
   });
 
   describe('findAll', () => {
@@ -56,21 +62,38 @@ describe('UsersService', () => {
   });
 
   describe('create', () => {
+    const dto: CreateUserDto = { email: 'new@example.com' };
+    const createdUser = {
+      id: 'user-2',
+      email: 'new@example.com',
+      name: null,
+      role: 'user',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
     it('delegates to repository.create with the given DTO', async () => {
-      const dto: CreateUserDto = { email: 'new@example.com' };
-      mockRepository.create.mockResolvedValue({
-        id: 'user-2',
-        ...dto,
-        name: null,
-        role: 'user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      mockRepository.create.mockResolvedValue(createdUser);
 
       const result = await service.create(dto);
 
       expect(mockRepository.create).toHaveBeenCalledWith(dto);
       expect(result.email).toBe('new@example.com');
+    });
+
+    it('emits a UserCreatedEvent after creation', async () => {
+      mockRepository.create.mockResolvedValue(createdUser);
+
+      await service.create(dto);
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.any(UserCreatedEvent),
+      );
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'user.created',
+        expect.objectContaining({ userId: 'user-2', email: 'new@example.com' }),
+      );
     });
   });
 

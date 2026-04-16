@@ -40,6 +40,12 @@ Use strict Test-Driven Development for all NestJS tasks.
 - Assert exact NestJS exception types where relevant.
 - Use proper async assertions with `rejects` and `resolves`.
 
+## Shared types
+
+- All payload and domain types shared between frontend and backend are defined in `packages/types/src/` and imported via `@repo/types`.
+- Never duplicate a shared type locally in an app — add it to `packages/types` and export it from `packages/types/src/index.ts`.
+- UI-only types (component props, local state) and server-only internals (ORM models) do not belong in `@repo/types`.
+
 ## Test file location
 
 - Unit specs live in `apps/server/test/<module>/`, NOT next to source files.
