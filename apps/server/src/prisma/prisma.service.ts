@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PrismaClient, PrismaMssql } from '@repo/db';
-import databaseConfig from '../config/database.config';
+import databaseConfig from '@/config/database.config';
 
 @Injectable()
 export class PrismaService
