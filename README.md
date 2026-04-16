@@ -99,6 +99,7 @@ notifications/events/notifications.listener.ts ← reaction, owned by Notificati
 
 - **Repository pattern** — data access is isolated in `*.repository.ts` classes; services contain only business logic.
 - **Path alias** — `@/` maps to `apps/server/src/`.
+- **Global exception filter** — `AllExceptionsFilter` handles all unhandled exceptions globally; no try/catch needed in controllers or services.
 - **Unit tests** — specs live in `apps/server/test/<module>/`, not alongside source files.
 - **TDD** — tests are written before implementation; mocks are applied only at true boundaries (repository, external APIs).
 
