@@ -47,6 +47,27 @@ pnpm test         # run all unit tests
 pnpm format       # format all files with Prettier
 ```
 
+## Test coverage
+
+Run coverage for the NestJS backend from the repo root:
+
+```bash
+pnpm --filter server test:cov
+```
+
+Or from `apps/server` directly:
+
+```bash
+pnpm test:cov
+```
+
+This produces:
+
+- A **terminal summary table** — statements, branches, functions, and lines per file.
+- An **HTML report** at `apps/server/coverage/lcov-report/index.html` — open in a browser for line-level highlighting.
+
+Coverage is collected from all files under `apps/server/src/`.
+
 ## Authorization
 
 Authorization uses [CASL](https://casl.js.org) with an ability-based model. The core logic lives in `packages/auth` and is shared across apps via `@repo/auth`.
