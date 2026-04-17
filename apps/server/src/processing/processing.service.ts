@@ -3,6 +3,28 @@ import { StoreService } from '../store/store.service';
 import { ImageParserService } from './image-parser.service';
 import { EnrichmentService } from './enrichment.service';
 import { ConfidenceService } from './confidence.service';
+import { OpenFoodFactsService } from './open-food-facts.service';
+import type { ParsedFoodProfile } from './types';
+
+function mergeParsedProfiles(
+  baseline: ParsedFoodProfile,
+  image: ParsedFoodProfile,
+): ParsedFoodProfile {
+  return {
+    productName: image.productName ?? baseline.productName,
+    brand: image.brand ?? baseline.brand,
+    ingredients: image.ingredients.length
+      ? image.ingredients
+      : baseline.ingredients,
+    allergens: image.allergens.length ? image.allergens : baseline.allergens,
+    probableAllergens: image.probableAllergens.length
+      ? image.probableAllergens
+      : baseline.probableAllergens,
+    nutritionValues: Object.keys(image.nutritionValues).length
+      ? image.nutritionValues
+      : baseline.nutritionValues,
+  };
+}
 
 @Injectable()
 export class ProcessingService {
@@ -13,6 +35,7 @@ export class ProcessingService {
     private readonly imageParser: ImageParserService,
     private readonly enrichment: EnrichmentService,
     private readonly confidence: ConfidenceService,
+    private readonly openFoodFacts: OpenFoodFactsService,
   ) {}
 
   async processApl(aplId: string): Promise<void> {
@@ -21,24 +44,54 @@ export class ProcessingService {
     try {
       this.store.updateAplStatus(aplId, 'Processing');
 
+      const apl = this.store.findApl(aplId);
+      const barcode: string | null | undefined = (
+        apl as unknown as Record<string, unknown>
+      )?.barcode as string | null | undefined;
+
       const images = this.store.findImagesByApl(aplId);
-      if (!images.length) {
-        this.logger.warn(`No images found for APL ${aplId}`);
+      const filenames = images.map((img) => img.filename);
+
+      const offSources: string[] = [];
+      let baseline: ParsedFoodProfile | null = null;
+
+      if (barcode) {
+        baseline = await this.openFoodFacts.lookup(barcode);
+        if (baseline) {
+          offSources.push(`Open Food Facts (barcode ${barcode})`);
+          this.logger.log(`OFF lookup succeeded for barcode ${barcode}`);
+        }
+      }
+
+      if (!baseline && !filenames.length) {
+        this.logger.warn(`No barcode result or images found for APL ${aplId}`);
         return;
       }
 
-      const filenames = images.map((img) => img.filename);
+      let parsed: ParsedFoodProfile;
 
-      const parsed = await this.imageParser.parseImages(filenames);
-      this.logger.log(`Parsed profile for APL ${aplId}`);
+      if (filenames.length) {
+        const imageParsed = await this.imageParser.parseImages(filenames);
+        this.logger.log(`Parsed profile from images for APL ${aplId}`);
+        parsed = baseline
+          ? mergeParsedProfiles(baseline, imageParsed)
+          : imageParsed;
+      } else {
+        parsed = baseline!;
+      }
 
-      const { enriched, sources } = await this.enrichment.enrich(parsed);
+      const { enriched, sources: enrichSources } =
+        await this.enrichment.enrich(parsed);
       this.logger.log(`Enriched data for APL ${aplId}`);
 
       const confidenceResult = this.confidence.score(parsed, enriched);
-      this.logger.log(`Confidence score for APL ${aplId}: ${confidenceResult.score}`);
+      this.logger.log(
+        `Confidence score for APL ${aplId}: ${confidenceResult.score}`,
+      );
 
-      const finalStatus = confidenceResult.level === 'low' ? 'Needs Review' : 'Enriched';
+      const allSources = [...offSources, ...enrichSources];
+      const finalStatus =
+        confidenceResult.level === 'low' ? 'Needs Review' : 'Enriched';
 
       this.store.upsertResult(aplId, {
         productName: parsed.productName,
@@ -51,7 +104,7 @@ export class ProcessingService {
         confidenceScore: confidenceResult.score,
         confidenceDetails: JSON.stringify(confidenceResult.fieldConfidence),
         reasoning: confidenceResult.reasoning,
-        sources: JSON.stringify(sources),
+        sources: JSON.stringify(allSources),
         status: finalStatus,
       });
 

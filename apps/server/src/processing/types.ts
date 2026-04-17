@@ -29,4 +29,5 @@ export interface CreateAplPayload {
   aplCode: string;
   aplName: string;
   category: string;
+  barcode?: string;
 }

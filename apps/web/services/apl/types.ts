@@ -52,6 +52,7 @@ export interface Apl {
   aplCode: string;
   aplName: string;
   category: string;
+  barcode?: string | null;
   status: AplStatus;
   images: AplImage[];
   result: AplResult | null;
@@ -63,4 +64,5 @@ export interface CreateAplPayload {
   aplCode: string;
   aplName: string;
   category: string;
+  barcode?: string;
 }

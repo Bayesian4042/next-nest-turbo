@@ -38,6 +38,7 @@ export default function NewAplPage() {
   const [aplCode, setAplCode] = useState('');
   const [aplName, setAplName] = useState('');
   const [category, setCategory] = useState('');
+  const [barcode, setBarcode] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -45,6 +46,8 @@ export default function NewAplPage() {
     if (!aplCode.trim()) e.aplCode = 'Article number is required';
     if (!aplName.trim()) e.aplName = 'APL description is required';
     if (!category) e.category = 'Category is required';
+    if (barcode.trim() && !/^\d{8,14}$/.test(barcode.trim()))
+      e.barcode = 'Barcode must be 8–14 digits (EAN/UPC)';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -53,7 +56,12 @@ export default function NewAplPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    const apl = await createApl.mutateAsync({ aplCode, aplName, category });
+    const apl = await createApl.mutateAsync({
+      aplCode,
+      aplName,
+      category,
+      ...(barcode.trim() ? { barcode: barcode.trim() } : {}),
+    });
     router.push(`/retina/${apl.id}/upload`);
   };
 
@@ -107,6 +115,28 @@ export default function NewAplPage() {
             />
             {errors.aplName && (
               <p className="text-xs text-destructive">{errors.aplName}</p>
+            )}
+          </div>
+
+          {/* Barcode */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium" htmlFor="barcode">
+              Barcode <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <Input
+              id="barcode"
+              placeholder="e.g. 5000112637939"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              aria-invalid={!!errors.barcode}
+              inputMode="numeric"
+            />
+            {errors.barcode ? (
+              <p className="text-xs text-destructive">{errors.barcode}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                EAN or UPC barcode — we&apos;ll pre-fill the food profile from Open Food Facts.
+              </p>
             )}
           </div>
 

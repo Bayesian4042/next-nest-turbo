@@ -229,7 +229,7 @@ export default function AplDetailPage() {
                 <ConfidenceBadge score={result.confidenceScore} />
               )}
             </div>
-            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
               <span className="font-mono">{apl.aplCode}</span>
               <span>·</span>
               <span>{apl.category}</span>
@@ -237,6 +237,14 @@ export default function AplDetailPage() {
                 <>
                   <span>·</span>
                   <span>{result.brand}</span>
+                </>
+              )}
+              {apl.barcode && (
+                <>
+                  <span>·</span>
+                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                    {apl.barcode}
+                  </span>
                 </>
               )}
             </div>
@@ -261,6 +269,9 @@ export default function AplDetailPage() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            {apl.barcode && sources.some((s) => s.includes('Open Food Facts')) && (
+              <TabsTrigger value="barcode">Barcode Data</TabsTrigger>
+            )}
             <TabsTrigger value="parsed">Parsed from Label</TabsTrigger>
             <TabsTrigger value="enriched">AI Enriched</TabsTrigger>
             <TabsTrigger value="confidence">Confidence</TabsTrigger>
@@ -345,6 +356,100 @@ export default function AplDetailPage() {
               </div>
             </div>
           </TabsContent>
+
+          {/* BARCODE DATA */}
+          {apl.barcode && sources.some((s) => s.includes('Open Food Facts')) && (
+            <TabsContent value="barcode" className="mt-6">
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-900/20">
+                  <Info className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="text-emerald-800 dark:text-emerald-300">
+                    Data fetched from{' '}
+                    <a
+                      href={`https://world.openfoodfacts.org/product/${apl.barcode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 font-medium"
+                    >
+                      Open Food Facts
+                    </a>{' '}
+                    using barcode <span className="font-mono">{apl.barcode}</span>.
+                    Image label data (if provided) overrides these values.
+                  </span>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Product Identity</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Product Name
+                        </p>
+                        <p className="mt-0.5 font-medium">
+                          {result?.productName ?? (
+                            <span className="text-muted-foreground italic">Not found</span>
+                          )}
+                        </p>
+                      </div>
+                      <Separator />
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Brand
+                        </p>
+                        <p className="mt-0.5 font-medium">
+                          {result?.brand ?? (
+                            <span className="text-muted-foreground italic">Not found</span>
+                          )}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Allergens (from barcode)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+                          Declared
+                        </p>
+                        <TagList items={allergens} color="red" />
+                      </div>
+                      <Separator />
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+                          Probable (traces)
+                        </p>
+                        <TagList items={probableAllergens} color="amber" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Ingredients (from barcode)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TagList items={ingredients} />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Nutrition (from barcode)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <NutritionTable values={nutritionValues} />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+          )}
 
           {/* PARSED */}
           <TabsContent value="parsed" className="mt-6">

@@ -34,6 +34,7 @@ export interface AplRecord {
   aplCode: string;
   aplName: string;
   category: string;
+  barcode?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -56,7 +57,7 @@ export class StoreService {
 
   // ── APL ──────────────────────────────────────────────────────────────
 
-  createApl(data: { aplCode: string; aplName: string; category: string; status?: string }): AplWithRelations {
+  createApl(data: { aplCode: string; aplName: string; category: string; barcode?: string; status?: string }): AplWithRelations {
     const id = randomUUID();
     const now = this.now();
     const record: AplRecord = {
@@ -64,6 +65,7 @@ export class StoreService {
       aplCode: data.aplCode,
       aplName: data.aplName,
       category: data.category,
+      barcode: data.barcode ?? null,
       status: data.status ?? 'Processing',
       createdAt: now,
       updatedAt: now,
